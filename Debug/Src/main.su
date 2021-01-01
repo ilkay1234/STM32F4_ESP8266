@@ -1,0 +1,4 @@
+main.c:122:6:SystemClock_Config	96	static
+main.c:243:6:ESP8266_Init	16	static
+main.c:74:5:main	24	static
+main.c:264:6:Error_Handler	0	static
