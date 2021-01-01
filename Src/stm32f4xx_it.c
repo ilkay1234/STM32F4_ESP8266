@@ -59,7 +59,7 @@
 extern UART_HandleTypeDef huart2;
 
 extern char Esp_Veri_Buffer[ESP_Buffer_Boyutu];
-extern uint16_t Sayac = 0;
+extern uint16_t Sayac;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */

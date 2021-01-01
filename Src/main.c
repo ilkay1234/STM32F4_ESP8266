@@ -59,7 +59,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+static void ESP8266_Init(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -246,10 +246,51 @@ void ESP8266_Init(void){
 	switch(Case){
 	case 0:
 		HAL_UART_Transmit(&huart2,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"AT\r\n"), 1000);
-		Case = 0;
+		Case = 1;
 		HAL_Delay(2000);
 		break;
+	case 1:
+		if(strstr(Esp_Veri_Buffer,"OK")){
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Module Erisildi!"), 1000);
+			Case = 2;
+		}
+		else{
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Module Erisilemedi!"), 1000);
+			Case = 0;
+		}
+		break;
+	case 2:
+		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CWMODE?\r\n"), 1000);
+		Case = 3;
+		HAL_Delay(2000);
+		break;
+	case 3:
+		if(strstr(Esp_Veri_Buffer,"+CWMODE:1")){
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Mod ayari dogru!\r\n"), 1000);
+			Case = 4;
 	}
+		else{
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Mod ayari yanlis!\r\n"), 1000);
+			HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CWMODE=1\r\n"), 1000);
+			Case = 0;
+		}
+		break;
+	case 4:
+		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CWJAP=\"Sert25\",\"123123asd\"\r\n"), 1000);
+		HAL_Delay(2000);
+		Case = 5;
+		break;
+	case 5:
+		if(strstr(Esp_Veri_Buffer,"OK")){
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Baglanti yapildi!\r\n"), 1000);
+			Case = 6;
+		}
+		else{
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Baglanti yapilamadi!\r\n"), 1000);
+			Case = 0;
+		}
+
+		}
 
 }
 
