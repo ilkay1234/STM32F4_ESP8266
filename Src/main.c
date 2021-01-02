@@ -47,7 +47,12 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-char TX_Buffer[100];
+char *Basic_inclusion = "<head> Hello World </head>";
+
+char *LED_ON = "<br><a href=\" ?pin=on\"><button type='button'>ON</button></a>";
+char *LED_OFF = "<br><a href=\" ?pin=off\"><button type='button'>OFF</button></a>";
+char datatosend[2000] = {0};
+char TX_Buffer[500];
 char RX_Buffer[100];
 char Esp_Veri_Buffer[ESP_Buffer_Boyutu];
 char ID[] = "Sert25";
@@ -257,12 +262,12 @@ void ESP8266_Init(char *SSID, char *PW){
 	case 1:
 		if(strstr(Esp_Veri_Buffer,"OK")){
 			Clear_ESP_Buffer();
-			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Module Erisildi!"), 1000);
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Module Erisildi!\r\n"), 1000);
 			Case = 2;
 		}
 		else{
 			Clear_ESP_Buffer();
-			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Module Erisilemedi!"), 1000);
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Module Erisilemedi!\r\n"), 1000);
 			Case = 0;
 		}
 		break;
@@ -350,7 +355,7 @@ void ESP8266_Init(char *SSID, char *PW){
 		break;
 	case 11:
 		if(strstr(Esp_Veri_Buffer,"OK")){
-			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Server basladi\r\n"), 1000);
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Server basladi!!!\r\n"), 1000);
 			Clear_ESP_Buffer();
 			Case = 12;
 		}
@@ -359,6 +364,24 @@ void ESP8266_Init(char *SSID, char *PW){
 			Clear_ESP_Buffer();
 			Case = 10;
 		}
+		break;
+	case 12:
+		if(strstr(Esp_Veri_Buffer,"GET")){
+		sprintf(datatosend, Basic_inclusion);
+		strcat(datatosend, LED_ON);
+		strcat(datatosend, LED_OFF);
+		int len = strlen(datatosend);
+		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIPSEND=%d,%d\r\n",0,len), 1000);
+		HAL_Delay(2000);
+		if(strstr(Esp_Veri_Buffer,">")){
+		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, datatosend), 1000);
+		HAL_Delay(6000);
+		}
+		}
+//		Case = 13;
+		break;
+
+
 		}
 
 }
