@@ -213,10 +213,8 @@ void USART2_IRQHandler(void)
   uint8_t Gelen_Byte = USART2->DR;
   USART3->DR = Gelen_Byte;
   if(Gelen_Byte != 0){
-
 	  Esp_Veri_Buffer[Sayac] = Gelen_Byte;
 	  Sayac++;
-
   }
   /* USER CODE END USART2_IRQn 1 */
 }

@@ -30,6 +30,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define ESP_Buffer_Boyutu 500
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -49,7 +50,10 @@ UART_HandleTypeDef huart3;
 char TX_Buffer[100];
 char RX_Buffer[100];
 char Esp_Veri_Buffer[ESP_Buffer_Boyutu];
+char ID[] = "Sert25";
+char PW[] = "123123asd";
 uint16_t Sayac = 0;
+int baglanti_sayaci = 0;
 
 /* USER CODE END PV */
 
@@ -59,7 +63,8 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-static void ESP8266_Init(void);
+static void ESP8266_Init(char *SSID, char *PW);
+static void Clear_ESP_Buffer(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -110,7 +115,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  ESP8266_Init();
+	  ESP8266_Init(ID, PW);
   }
   /* USER CODE END 3 */
 }
@@ -240,7 +245,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void ESP8266_Init(void){
+void ESP8266_Init(char *SSID, char *PW){
 
 	static uint8_t Case = 0;
 	switch(Case){
@@ -251,10 +256,12 @@ void ESP8266_Init(void){
 		break;
 	case 1:
 		if(strstr(Esp_Veri_Buffer,"OK")){
+			Clear_ESP_Buffer();
 			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Module Erisildi!"), 1000);
 			Case = 2;
 		}
 		else{
+			Clear_ESP_Buffer();
 			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Module Erisilemedi!"), 1000);
 			Case = 0;
 		}
@@ -266,32 +273,103 @@ void ESP8266_Init(void){
 		break;
 	case 3:
 		if(strstr(Esp_Veri_Buffer,"+CWMODE:1")){
+			Clear_ESP_Buffer();
 			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Mod ayari dogru!\r\n"), 1000);
 			Case = 4;
 	}
 		else{
+			Clear_ESP_Buffer();
 			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Mod ayari yanlis!\r\n"), 1000);
 			HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CWMODE=1\r\n"), 1000);
 			Case = 0;
 		}
 		break;
 	case 4:
-		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CWJAP=\"Sert25\",\"123123asd\"\r\n"), 1000);
+		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CWJAP=\"%s\",\"%s\"\r\n",SSID,PW), 1000);
 		HAL_Delay(2000);
 		Case = 5;
 		break;
 	case 5:
 		if(strstr(Esp_Veri_Buffer,"OK")){
+			Clear_ESP_Buffer();
 			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Baglanti yapildi!\r\n"), 1000);
 			Case = 6;
 		}
 		else{
-			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Baglanti yapilamadi!\r\n"), 1000);
-			Case = 0;
+			Clear_ESP_Buffer();
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Baglanti yapilamadi! Bekleniyor!!\r\n"), 1000);
+			baglanti_sayaci++;
+			HAL_Delay(2000);
+			if (baglanti_sayaci == 5){
+				HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Baglanti basarisiz. Tekrar deneniyor!!!\r\n"), 1000);
+				Case = 0;
+				baglanti_sayaci = 0;
+			}
+		}
+		break;
+	case 6:
+		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIFSR\r\n"), 1000);
+		HAL_Delay(2000);
+		Case = 7;
+		break;
+	case 7:
+		if(strstr(Esp_Veri_Buffer,"OK")){
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"IP Alindi!!!\r\n"), 1000);
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Cihaz IP = \r\n"), 1000);
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer, &Esp_Veri_Buffer[11]), 1000);
+			Clear_ESP_Buffer();
+			Case = 8;
+		}
+		else{
+			Clear_ESP_Buffer();
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"IP Alinamadi!! Tekrar deneniyor!!!\r\n"), 1000);
+			Case = 6;
+		}
+		break;
+	case 8:
+		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIPMUX=1\r\n"), 1000);
+		HAL_Delay(2000);
+		Case = 9;
+		break;
+	case 9:
+		if(strstr(Esp_Veri_Buffer,"OK")){
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Coklu baglanti dogrulandi!!!!\r\n"), 1000);
+			Clear_ESP_Buffer();
+			Case = 10;
+		}
+		else{
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Coklu baglanti dogrulanamadi!!!!\r\n"), 1000);
+			Clear_ESP_Buffer();
+			Case = 8;
+		}
+		break;
+	case 10:
+		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIPSERVER=1,80\r\n"), 1000);
+		HAL_Delay(2000);
+		Case = 11;
+		break;
+	case 11:
+		if(strstr(Esp_Veri_Buffer,"OK")){
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Server basladi\r\n"), 1000);
+			Clear_ESP_Buffer();
+			Case = 12;
+		}
+		else{
+			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Server baslamadi\r\n"), 1000);
+			Clear_ESP_Buffer();
+			Case = 10;
+		}
 		}
 
-		}
+}
 
+void Clear_ESP_Buffer(void){
+
+	uint16_t i;
+	for(i= 0; i < ESP_Buffer_Boyutu; i++){
+		Esp_Veri_Buffer[i] = 0;
+	}
+	Sayac = 0;
 }
 
 
