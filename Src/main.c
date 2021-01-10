@@ -29,7 +29,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define ESP_Buffer_Boyutu 500
+#define ESP_Buffer_Boyutu 5000
 
 /* USER CODE END PTD */
 
@@ -55,11 +55,11 @@ char datatosend[2000] = {0};
 char TX_Buffer[500];
 char RX_Buffer[100];
 char Esp_Veri_Buffer[ESP_Buffer_Boyutu];
-char ID[] = "Sert25";
-char PW[] = "123123asd";
+char ID[] = "AirTies-26";
+char PW[] = "MFSi.27161823";
 uint16_t Sayac = 0;
 int baglanti_sayaci = 0;
-
+int len = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -241,11 +241,23 @@ static void MX_USART3_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PD12 PD13 PD14 PD15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 }
 
@@ -257,7 +269,7 @@ void ESP8266_Init(char *SSID, char *PW){
 	case 0:
 		HAL_UART_Transmit(&huart2,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"AT\r\n"), 1000);
 		Case = 1;
-		HAL_Delay(2000);
+		HAL_Delay(500);
 		break;
 	case 1:
 		if(strstr(Esp_Veri_Buffer,"OK")){
@@ -274,7 +286,7 @@ void ESP8266_Init(char *SSID, char *PW){
 	case 2:
 		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CWMODE?\r\n"), 1000);
 		Case = 3;
-		HAL_Delay(2000);
+		HAL_Delay(500);
 		break;
 	case 3:
 		if(strstr(Esp_Veri_Buffer,"+CWMODE:1")){
@@ -291,7 +303,7 @@ void ESP8266_Init(char *SSID, char *PW){
 		break;
 	case 4:
 		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CWJAP=\"%s\",\"%s\"\r\n",SSID,PW), 1000);
-		HAL_Delay(2000);
+		HAL_Delay(500);
 		Case = 5;
 		break;
 	case 5:
@@ -304,7 +316,7 @@ void ESP8266_Init(char *SSID, char *PW){
 			Clear_ESP_Buffer();
 			HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Baglanti yapilamadi! Bekleniyor!!\r\n"), 1000);
 			baglanti_sayaci++;
-			HAL_Delay(2000);
+			HAL_Delay(1250);
 			if (baglanti_sayaci == 5){
 				HAL_UART_Transmit(&huart3,(uint8_t*)TX_Buffer, sprintf(TX_Buffer,"Baglanti basarisiz. Tekrar deneniyor!!!\r\n"), 1000);
 				Case = 0;
@@ -314,7 +326,7 @@ void ESP8266_Init(char *SSID, char *PW){
 		break;
 	case 6:
 		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIFSR\r\n"), 1000);
-		HAL_Delay(2000);
+		HAL_Delay(500);
 		Case = 7;
 		break;
 	case 7:
@@ -333,7 +345,7 @@ void ESP8266_Init(char *SSID, char *PW){
 		break;
 	case 8:
 		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIPMUX=1\r\n"), 1000);
-		HAL_Delay(2000);
+		HAL_Delay(500);
 		Case = 9;
 		break;
 	case 9:
@@ -350,7 +362,7 @@ void ESP8266_Init(char *SSID, char *PW){
 		break;
 	case 10:
 		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIPSERVER=1,80\r\n"), 1000);
-		HAL_Delay(2000);
+		HAL_Delay(500);
 		Case = 11;
 		break;
 	case 11:
@@ -367,21 +379,37 @@ void ESP8266_Init(char *SSID, char *PW){
 		break;
 	case 12:
 		if(strstr(Esp_Veri_Buffer,"GET")){
-		sprintf(datatosend, Basic_inclusion);
-		strcat(datatosend, LED_ON);
-		strcat(datatosend, LED_OFF);
-		int len = strlen(datatosend);
-		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIPSEND=%d,%d\r\n",0,len), 1000);
-		HAL_Delay(2000);
-		if(strstr(Esp_Veri_Buffer,">")){
-		HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, datatosend), 1000);
-		HAL_Delay(6000);
+			sprintf(datatosend, Basic_inclusion);
+			strcat(datatosend, LED_ON);
+			strcat(datatosend, LED_OFF);
+			len = strlen(datatosend);
+			HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIPSEND=%d,%d\r\n",0,len), 1000);
+			HAL_Delay(500);
+			if(strstr(Esp_Veri_Buffer,">")){
+				HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, datatosend), 1000);
+				HAL_Delay(500);
+				Case = 13;
+			}
+
 		}
-		}
-//		Case = 13;
+
 		break;
+	case 13:
+		if(strstr(Esp_Veri_Buffer,":GET /?pin=on")) {
+			HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12 | GPIO_PIN_13| GPIO_PIN_14| GPIO_PIN_15, GPIO_PIN_SET);
+			HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIPCLOSE=0\r\n"), 1000);
+			Clear_ESP_Buffer();
+			Case = 12;
+		}
 
+		else if(strstr(Esp_Veri_Buffer,":GET /?pin=off")) {
+			HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12 | GPIO_PIN_13| GPIO_PIN_14| GPIO_PIN_15, GPIO_PIN_RESET);
+			HAL_UART_Transmit(&huart2, (uint8_t*)TX_Buffer, sprintf(TX_Buffer, "AT+CIPCLOSE=0\r\n"), 1000);
+			Clear_ESP_Buffer();
+			Case = 12;
+		}
 
+		break;
 		}
 
 }
